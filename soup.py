@@ -4,6 +4,11 @@ import requests
 from bs4 import BeautifulSoup 
 import csv
 
+
+#A list containing all words/phrases that we consider relevant to RPI
+RPIRelevantWords = ["RPI", "Renssalaer", "SIS", "Goldschmidt"]
+
+
 #Input: a string representing the URL 
 #Output: None (process terminates)
 #Modifies: None
@@ -23,6 +28,7 @@ def crawl(URL):
 	crawledLinks = []
 	soup = BeautifulSoup(r.content, 'html.parser')	
 	links = soup.find_all('a')
+	text = soup.text()
 	for link in links:
 		linkUrl = link['href']
 		linkAllowed = 1
@@ -33,19 +39,7 @@ def crawl(URL):
 			crawledLinks.append(linkUrl)
 	for crawledLink in crawledLinks:
 		print(crawledLink)
-
-#Input: a string representing the link sent by LA
-#		a list of strings representing all links at the given link
-#		an int representing the status code returned by querying the webpage
-#Output: An int representing the error code, as below:
-#		0: Function ran successfully
-#		1: Function failed
-#Modifies: None
-#Send a json string containing a dictionary with the following structure to Link Analysis
-#inner-link: https://www.cs.rpi.edu/~goldsd/index.php, status_code: 404, 
-#outbond-links: [https://science.rpi.edu/computer-science/programs/undergrad/bs-computerscience],
-def LASend(inboundLink, outboundLinks, statusCode):
-	return 0
+	print(RPIRelevanceCheck(URL, text ,crawledLinks))
 
 #Input: a string representing the source URL
 #Output: a list of all links that are disallowed by robots.txt
@@ -62,7 +56,23 @@ def crawlRobots(URL):
 			disallowList.append(DisallowLine)
 	return disallowList
 
-#Input: a 
+#Input: a string representing the source URL
+# 		a string representing the plaintext
+#		list of strings representing the links scraped from the source URL
+#Output: a int that represents if the crawled link and plaintext are 'RPI related'. 0: they aren't, 1: the are: -1 error
+#Modifies: Nothing
+#Loop through the list RPIRelevantWords. If any of these words appaer in the plaintext, source link or scraped links
+#The page is RPI relevant. If these words don't appear, it's not. 
+def RPIRelevanceCheck(URL, plaintext, links):
+	for relevantWord in RPIRelevantWords:
+		if(relevantWord in URL):
+			return 1
+		if(relevantWord in plaintext):
+			return 1
+		for links in link:
+			if(relevantWord in links):
+				return 1
+	return 0
 
 if __name__ == '__main__':
 	#p = Process(target=child, args(URL))
