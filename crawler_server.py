@@ -22,27 +22,38 @@ def crawl_link():
     # send output to link analysis
     request.post(LA_url, param='ack')
 
-#@app.route('/ack')
-#def acknowledgement():
-#    return
+"""
+Description: Recognize if an acknowledgement was recieved
+Input: An /ack request
+Effects: tells the server another componenet has recieved our data
+"""
+@app.route('/ack')
+def acknowledgement():
+    return
 
 """
-Description: Main loop method, handles a queue of links and passes them onto our crawling algoirthm
+Global Variables
 """
-if __name__ == "__main__":
-    
-    # static IP addresses for the Link Analysis and Document Data Store servers
-    LA_url = ""
-    DDS_url = ""
-    
-    # queues used to store 
-    q_links = queue.Queue()
-    q_active = queue.Queue()
-    
-    # only allow at most 10 links to be processed at a time
-    available = 0
-    limit = 10
-    
+# static IP addresses for the Link Analysis and Document Data Store servers
+LA_url = ""
+DDS_url = ""
+
+# queues used to store 
+q_links = queue.Queue()
+q_active = queue.Queue()
+
+# only allow at most 10 links to be processed at a time
+available = 0
+limit = 10
+
+
+"""
+description: infinite loop which gives new links to our crawling algorithm and replies to LA and DDS
+input: none
+output: handles processing new links put into q_links then sends the data to LA and DDS
+
+"""
+def start_main():
     # this should run forever as the server should never stop
     while True:
         
@@ -66,8 +77,18 @@ if __name__ == "__main__":
             
             # send JSON object to DDS
             request.post(DDS_url, param=json)
-            available -= 1
+            available -= 1    
+
+"""
+Description: starts main loop
+"""
+if __name__ == "__main__":
+    start_main()
             
+
+
+
+
 
 """
 NEED TO DO:
