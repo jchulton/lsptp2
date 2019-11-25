@@ -57,6 +57,10 @@ def start_main():
     # this should run forever as the server should never stop
     while True:
         
+        # get recrawl links from DDS
+        if time.time() == 0:
+            
+        
         # if a new process space is available, start a new process
         if available < limit and not q_links.empty():
             json = dict()
