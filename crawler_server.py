@@ -7,7 +7,16 @@ import importlib
 from soup import crawl
 app = Flask(__name__)
 
+
 ### API Calls
+
+"""
+Test to see if server is active and responding
+"""
+@app.route('/helloworld')
+def helloworld():
+    return "helloworld"
+
 """
 Description: Takes a /crawl request from L.A. and queues a new link
 Input: A crawl request with a single link (string) as a parameter
@@ -17,6 +26,7 @@ Effects: queues a new link to q_links
 """
 @app.route('/crawl')
 def crawl_link():
+    print("Got LA data")
     link = request.args.get('url')
     q.put(link)
     # send output to link analysis
@@ -31,7 +41,6 @@ Effects: tells the server another componenet has recieved our data
 @app.route('/ack')
 def acknowledgement():
     need_ack = False
-
 
 
 ### Global Variables
@@ -51,19 +60,22 @@ q_active = queue.Queue()
 available = 0
 limit = 10
 
-### Methods
 
+### Methods
 """
 description: infinite loop which gives new links to our crawling algorithm and replies to LA and DDS
 input: none
 output: handles processing new links put into q_links then sends the data to LA and DDS
 """
 def start_main():
+    print("Operating on links")
+    
     # this should run forever as the server should never stop
     while True:
         
         # get recrawl links from DDS
         if time.time() == 0:
+            print("Re Crawling links")
             recrawls = request.get(DDS_url, param="/recrawl")
             for link in recrawls:
                 q_links.put(link)
@@ -71,6 +83,7 @@ def start_main():
         
         # if a new process space is available, start a new process
         if available < limit and not q_links.empty():
+            print("Crawling Link")
             json = dict()
             
             # create new process with a reference to a json object (dicitionary)
@@ -81,6 +94,7 @@ def start_main():
         
         # if a process is running, join it and send the output to LA and DDS
         if not q_active.empty():
+            print("Joining Link")
             json, pro = q_active.get(True)
             pro.join()
             
@@ -97,10 +111,13 @@ def start_main():
                 continue            
             available -= 1    
 
+
 """
 Description: starts main loop
 """
 if __name__ == "__main__":
+    print("Server starting")
+    app.run(host='localhost', port=80)
     start_main()
             
 

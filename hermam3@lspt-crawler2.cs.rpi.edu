@@ -1,81 +1,147 @@
+from flask import Flask, request
 from multiprocessing import Process
-import os
-import requests 
-from bs4 import BeautifulSoup 
-import csv
+import json
+import queue
+import time
+import importlib
+from soup import crawl
+app = Flask(__name__)
 
 
-#A list containing all words/phrases that we consider relevant to RPI
-RPIRelevantWords = ["RPI", "Renssalaer", "SIS", "Goldschmidt"]
+### API Calls
+"""
+Description: Takes a /crawl request from L.A. and queues a new link
+Input: A crawl request with a single link (string) as a parameter
+Output: Sends the link to a queue of urls which will be processed.
+        Also sends an acknowledgment to LA
+Effects: queues a new link to q_links
+"""
+@app.route('/crawl')
+def crawl_link():
+    print("Got LA data")
+    link = request.args.get('url')
+    q.put(link)
+    # send output to link analysis
+    request.post(LA_url, param='/ack')
 
 
-#Input: a string representing the URL 
-#Output: None (process terminates)
-#Modifies: None
-#Given the url, crawl that url using BS4 and send the plaintext, links and updated timestamp to DDS
-#def child(URL):
+"""
+Description: Recognize if an acknowledgement was recieved
+Input: An /ack request
+Effects: tells the server another componenet has recieved our data
+"""
+@app.route('/ack')
+def acknowledgement():
+    need_ack = False
 
-#Input: a string representing the URL 
-#Output: a json string containing a dictionary which makes the given pattern (or a None on failure)
-	#inner-link: https://www.cs.rpi.edu/~goldsd/index.php, status_code: 404, 
-	#outbond-links: [https://science.rpi.edu/computer-science/programs/undergrad/bs-computerscience],
-	#last-modified-date: 01-01-0001, plain-text: This is all the plain text not rly tho
-#Modifies: Nothing
-def crawl(URL):
-	r = requests.get(URL)
-	disallowList = crawlRobots(URL)
-			
-	crawledLinks = []
-	soup = BeautifulSoup(r.content, 'html.parser')	
-	links = soup.find_all('a')
-	text = soup.text()
-	for link in links:
-		linkUrl = link['href']
-		linkAllowed = 1
-		for disallowedLink in disallowList:
-			if(disallowedLink in linkUrl):
-				linkAllowed = 0
-		if(linkAllowed == 1):
-			crawledLinks.append(linkUrl)
-	for crawledLink in crawledLinks:
-		print(crawledLink)
-	print(RPIRelevanceCheck(URL, text ,crawledLinks))
 
-#Input: a string representing the source URL
-#Output: a list of all links that are disallowed by robots.txt
-#Modifies: nothing
-def crawlRobots(URL):
-	splitURL = URL.split("/")
-	disallowList = []
-	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/robots.txt"
-	f = requests.get(robotsLink)
-	for line in f.iter_lines():
-		decoded = line.decode()
-		if "Disallow:" in decoded:
-			DisallowLine = decoded.split("Disallow:")[1].strip()
-			disallowList.append(DisallowLine)
-	return disallowList
+### Global Variables
 
-#Input: a string representing the source URL
-# 		a string representing the plaintext
-#		list of strings representing the links scraped from the source URL
-#Output: a int that represents if the crawled link and plaintext are 'RPI related'. 0: they aren't, 1: the are: -1 error
-#Modifies: Nothing
-#Loop through the list RPIRelevantWords. If any of these words appaer in the plaintext, source link or scraped links
-#The page is RPI relevant. If these words don't appear, it's not. 
-def RPIRelevanceCheck(URL, plaintext, links):
-	for relevantWord in RPIRelevantWords:
-		if(relevantWord in URL):
-			return 1
-		if(relevantWord in plaintext):
-			return 1
-		for links in link:
-			if(relevantWord in links):
-				return 1
-	return 0
+# Boolean variable showing whether an acknowledgement is needed
+need_ack = False
 
-if __name__ == '__main__':
-	#p = Process(target=child, args(URL))
-	#p.start()
-	#p.join()
-	crawl("https://www.cs.rpi.edu/~goldsd/index.php")
+# static IP addresses for the Link Analysis and Document Data Store servers
+LA_url = ""
+DDS_url = ""
+
+# queues used to store 
+q_links = queue.Queue()
+q_active = queue.Queue()
+
+# only allow at most 10 links to be processed at a time
+available = 0
+limit = 10
+
+
+### Methods
+"""
+description: infinite loop which gives new links to our crawling algorithm and replies to LA and DDS
+input: none
+output: handles processing new links put into q_links then sends the data to LA and DDS
+"""
+def start_main():
+    print("Operating on links")
+    
+    # this should run forever as the server should never stop
+    while True:
+        
+        # get recrawl links from DDS
+        if time.time() == 0:
+            print("Re Crawling links")
+            recrawls = request.get(DDS_url, param="/recrawl")
+            for link in recrawls:
+                q_links.put(link)
+            request.post(DDS_url, param='/ack')
+        
+        # if a new process space is available, start a new process
+        if available < limit and not q_links.empty():
+            print("Crawling Link")
+            json = dict()
+            
+            # create new process with a reference to a json object (dicitionary)
+            pro = Process(target=crawl(), args=(q_links.get(True), json))
+            q_active.put((json, pro))
+            available += 1
+            pro.start()
+        
+        # if a process is running, join it and send the output to LA and DDS
+        if not q_active.empty():
+            print("Joining Link")
+            json, pro = q_active.get(True)
+            pro.join()
+            
+            # send output to link analysis
+            request.post(LA_url, param={'urls': json['out_links']})
+            need_ack = True
+            while need_ack:
+                continue            
+            
+            # send JSON object to DDS
+            request.post(DDS_url, param=json)
+            need_ack = True
+            while need_ack:
+                continue            
+            available -= 1    
+
+
+"""
+Description: starts main loop
+"""
+if __name__ == "__main__":
+    print("Server starting")
+    app.run(host='localhost', port=2500)
+    start_main()
+            
+
+
+
+
+
+"""
+NEED TO DO:
+X send ACK to LA when we get input
+wait for ACK from DDS, and decide what to do if we don't recieve one in x time
+get info on how to connect with LA and DDS servers
+refine when/how recrawling will take place
+format with codeing style specifications
+
+
+Document Data Store:
+PUSHING
+    DELETE request:
+        if we find a url that should not be a search result
+        do we still send a full json object or just the url???
+    PUT request: COMPLETED
+        if we find a url that should be searched send json object
+PULLING
+    GET request: COMPLETED????
+        if we need to recrawl a url????
+
+Link Analysis:
+TAKE
+    /crawl url: COMPLETED
+        operate on incoming link
+SEND
+    POST request: COMPLETED
+        send outgoign urls
+"""
