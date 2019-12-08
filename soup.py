@@ -5,22 +5,26 @@ from bs4 import BeautifulSoup
 import csv
 import datetime
 from datetime import timedelta
-#A list containing all words/phrases that we consider relevant to RPI
-RPIRelevantWords = ["RPI", "Renssalaer", "SIS", "Goldschmidt"]
+#A list containing all words/phrases that we consider relevant to RPI. A webpage with text or links that contains
+#One of these words will be considered relevant to RPI. Otherwise, it will be considered not relevant
+RPIRelevantWords = ["RPI", "Renssalaer", "SIS"]
 
 
 #Input: a string representing the URL 
-#Output: None (process terminates)
-#Modifies: None
-#Given the url, crawl that url using BS4 and send the plaintext, links and updated timestamp to DDS
-#def child(URL):
-
-#Input: a string representing the URL 
-#Output: a json string containing a dictionary which makes the given pattern (or a None on failure)
-	#inner-link: https://www.cs.rpi.edu/~goldsd/index.php, status_code: 404, 
+#Output: None
+#Modifies: The given dict json. Initially empty, json will be made to match the following pattern
+	#inner-link: https://www.cs.rpi.edu/~goldsd/index.php,
+	#status-code: 404, 
 	#outbond-links: [https://science.rpi.edu/computer-science/programs/undergrad/bs-computerscience],
-	#last-modified-date: 01-01-0001, plain-text: This is all the plain text not rly tho
-#Modifies: Nothing
+	#plain-text: This is all the plain text not rly tho,
+	#recrawl-date: 01-01-2020
+#inner-link: The given URL
+#status-code contains the status code that resutls from querying the given URL
+#outbound-links: contains all links that are on webpage queried from the given URL
+#plain-text: contains all the plaintext that is on the webpage queried from the given URL
+#recrawl-date: The date on which the webpage should be recrawled
+#If the code fails midway through, the json will not be properly updated and will contain all Nones
+#The parent process will know the crawl failed
 def crawl(URL, json):
 	r = requests.get(URL)
 	disallowList = crawlRobots(URL)
@@ -40,23 +44,27 @@ def crawl(URL, json):
 	for crawledLink in crawledLinks:
 		print(crawledLink)
 	print(RPIRelevanceCheck(URL, text ,crawledLinks))
-	print(findLastModifiedDate(URL))
+	print(findRecrawlDate(URL))
 	if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
 		json["inner-link"] = URL
 		json["outbond-links"] = crawledLinks
-		json["status_code"] = r.status_code
+		json["status-code"] = r.status_code
 		json["plain-text"] = text
-		json["date-to-update"] = findLastModifiedDate(URL)
+		json["recrawl-date"] = findRecrawlDate(URL)
 	else:
 		json["inner-link"] = URL
 		json["outbond-links"] = []
-		json["status_code"] = 600
+		json["status-code"] = 600
 		json["plain-text"] = None
-		json["date-to-update"] = None	
+		json["recrawl-date"] = None	
 
 #Input: a string representing the source URL
 #Output: a list of all links that are disallowed by robots.txt
 #Modifies: nothing
+#Transform the given URL into a URL which should lead to the robots.txt file of the webpage, if the roboots.txt exists.
+#If robots.txt does exist, parse it for all links that are disallowed. These links will be added to a list and returned.
+#If robots.txt does not exist, or if it contains no disallowed links, return an empty list. No links will be disallowed.
+#Disallowed links will not be included in the list of inner-links sent to Document Data Storage
 def crawlRobots(URL):
 	splitURL = URL.split("/")
 	disallowList = []
@@ -70,9 +78,14 @@ def crawlRobots(URL):
 	return disallowList
 	
 #Input: a string representing the source URL
-#Output: the last modified date if it can be found, None otherwise
+#Output: The date on which the given URL will need to be recrawled
 #Modifies: nothing
-def findLastModifiedDate(URL):
+#Transforms the give URL into a URL which should lead to the sitemap.xml file of the webpage, if the sitemap exists.
+#If the sitemap does exist, parse it for the date the webpage was lost modifed at the change frequency.
+#Add the change frequency to the last modified date. This is the date on which the webpage will need to be recrawled.
+#If the last modified date cannot be found, use the current date. If the change frequency cannot be found, use 1 month.
+#If the sitemap doesn't exist, use the defaults above (so return one month later than the current date).
+def findRecrawlDate(URL):
 	splitURL = URL.split("/")
 	disallowList = []
 	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
@@ -103,7 +116,8 @@ def findLastModifiedDate(URL):
 #Output: a int that represents if the crawled link and plaintext are 'RPI related'. 0: they aren't, 1: the are: -1 error
 #Modifies: Nothing
 #Loop through the list RPIRelevantWords. If any of these words appaer in the plaintext, source link or scraped links
-#The page is RPI relevant. If these words don't appear, it's not. 
+#The page is RPI relevant. If these words don't appear, it's not. non-relevant webpages should not be send to Document Data Storage to be stored.
+#If 
 def RPIRelevanceCheck(URL, plaintext, links):
 	for relevantWord in RPIRelevantWords:
 		if(relevantWord in URL):
@@ -114,7 +128,7 @@ def RPIRelevanceCheck(URL, plaintext, links):
 			if(relevantWord in link):
 				return 1
 	return 0
-
+#This main is used for local testing purposes and should be removed/commented out for final implementation
 if __name__ == '__main__':
 	#p = Process(target=child, args(URL))
 	#p.start()
