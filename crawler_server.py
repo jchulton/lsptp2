@@ -65,9 +65,11 @@ text_file = open("output.txt", "w")
 
 ### Methods
 """
-description: infinite loop which gives new links to our crawling algorithm and replies to LA and DDS
+description: infinite loop which gives new links to our crawling 
+    algorithm and replies to LA and DDS
 input: none
-output: handles processing new links put into q_links then sends the data to LA and DDS
+output: handles processing new links put into q_links then sends the 
+    data to LA and DDS
 """
 def start_main():
 
