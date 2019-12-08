@@ -26,37 +26,50 @@ RPIRelevantWords = ["RPI", "Renssalaer", "SIS"]
 #If the code fails midway through, the json will not be properly updated and will contain all Nones
 #The parent process will know the crawl failed
 def crawl(URL, json):
-	r = requests.get(URL)
-	disallowList = crawlRobots(URL)
-			
-	crawledLinks = []
-	soup = BeautifulSoup(r.content, 'html.parser')	
-	links = soup.find_all('a')
-	text = soup.getText()
-	for link in links:
-		linkUrl = link['href']
-		linkAllowed = 1
-		for disallowedLink in disallowList:
-			if(disallowedLink in linkUrl):
-				linkAllowed = 0
-		if(linkAllowed == 1):
-			crawledLinks.append(linkUrl)
-	for crawledLink in crawledLinks:
-		print(crawledLink)
-	print(RPIRelevanceCheck(URL, text ,crawledLinks))
-	print(findRecrawlDate(URL))
-	if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
-		json["inner-link"] = URL
-		json["outbond-links"] = crawledLinks
-		json["status-code"] = r.status_code
-		json["plain-text"] = text
-		json["recrawl-date"] = findRecrawlDate(URL)
-	else:
+	try:
+		r = requests.get(URL)
+		if(r.status_code != 200):
+			json["inner-link"] = URL
+			json["outbond-links"] = []
+			json["status-code"] = r.status_code
+			json["plain-text"] = None
+			json["recrawl-date"] = None
+			return	
+		disallowList = crawlRobots(URL)	
+		crawledLinks = []
+		soup = BeautifulSoup(r.content, 'html.parser')	
+		links = soup.find_all('a')
+		text = soup.getText()
+		for link in links:
+			linkUrl = link['href']
+			linkAllowed = 1
+			for disallowedLink in disallowList:
+				if(disallowedLink in linkUrl):
+					linkAllowed = 0
+			if(linkAllowed == 1):
+				crawledLinks.append(linkUrl)
+		for crawledLink in crawledLinks:
+			print(crawledLink)
+		print(RPIRelevanceCheck(URL, text ,crawledLinks))
+		print(findRecrawlDate(URL))
+		if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
+			json["inner-link"] = URL
+			json["outbond-links"] = crawledLinks
+			json["status-code"] = r.status_code
+			json["plain-text"] = text
+			json["recrawl-date"] = findRecrawlDate(URL)
+		else:
+			json["inner-link"] = URL
+			json["outbond-links"] = []
+			json["status-code"] = 600
+			json["plain-text"] = None
+			json["recrawl-date"] = None	
+	except requests.exceptions.ConnectionError:
 		json["inner-link"] = URL
 		json["outbond-links"] = []
-		json["status-code"] = 600
+		json["status-code"] = 602
 		json["plain-text"] = None
-		json["recrawl-date"] = None	
+		json["recrawl-date"] = None		
 
 #Input: a string representing the source URL
 #Output: a list of all links that are disallowed by robots.txt
@@ -134,9 +147,9 @@ if __name__ == '__main__':
 	#p.start()
 	#p.join()
 	json = dict()
-	crawl("https://www.cs.rpi.edu/~goldsd/index.php", json)
+	crawl("https://www.cs.rpi", json)
 	print(json["inner-link"])
 	print(json["outbond-links"])
-	print(json["status_code"])
+	print(json["status-code"])
 	print(json["plain-text"])
-	print(json["date-to-update"])
+	print(json["recrawl-date"])
