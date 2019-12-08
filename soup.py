@@ -86,28 +86,28 @@ def crawlRobots(URL):
 #If the last modified date cannot be found, use the current date. If the change frequency cannot be found, use 1 month.
 #If the sitemap doesn't exist, use the defaults above (so return one month later than the current date).
 def findRecrawlDate(URL):
-	splitURL = URL.split("/")
-	disallowList = []
-	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
-	f = requests.get(robotsLink)
-	soup = BeautifulSoup(f.content, 'lxml')
-	surfaceTag = soup.find("loc", string = URL)
-	if surfaceTag is None:
-		return datetime.datetime.now() + timedelta(days=30)
-	changeFreqTag = surfaceTag.find(changefreq)
-	lastModTag = surfaceTag.find(lastmod)
-	if changeFreqTag is not None:
-		changeFreqTagVal = changeFreqTag.getText()
-		lastModTagVal = datetime.datetime.strptime(lastModTag.getText(), '%Y-%m-%d')
-		if changeFreqTagVal == "weekly":
-			return lastModTagVal + timedelta(days=7)
-		if changeFreqTagVal == "daily":
-			return lastModTagVal + timedelta(days=1)
-		if changeFreqTagVal == "monthly":
-			return lastModTagVal + timedelta(days=30)
-		if changeFreqTagVal == "yearly":
-			return lastModTagVal + timedelta(days=365)
-		return changeFreqTagVal
+#	splitURL = URL.split("/")
+#	disallowList = []
+#	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
+#	f = requests.get(robotsLink)
+#	soup = BeautifulSoup(f.content, 'lxml')
+#	surfaceTag = soup.find("loc", string = URL)
+#	if surfaceTag is None:
+#		return datetime.datetime.now() + timedelta(days=30)
+#	changeFreqTag = surfaceTag.find(changefreq)
+#	lastModTag = surfaceTag.find(lastmod)
+#	if changeFreqTag is not None:
+#		changeFreqTagVal = changeFreqTag.getText()
+#		lastModTagVal = datetime.datetime.strptime(lastModTag.getText(), '%Y-%m-%d')
+#		if changeFreqTagVal == "weekly":
+#			return lastModTagVal + timedelta(days=7)
+#		if changeFreqTagVal == "daily":
+#			return lastModTagVal + timedelta(days=1)
+#		if changeFreqTagVal == "monthly":
+#			return lastModTagVal + timedelta(days=30)
+#		if changeFreqTagVal == "yearly":
+#			return lastModTagVal + timedelta(days=365)
+#		return changeFreqTagVal
 	return datetime.datetime.now() + timedelta(days=30)
 
 #Input: a string representing the source URL
