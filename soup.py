@@ -27,6 +27,8 @@ RPIRelevantWords = ["RPI", "Renssalaer", "SIS"]
 #The parent process will know the crawl failed
 def crawl(URL, json):
 	try:
+		
+		#If the webpage couldn't be reached, don't try and parse it, just set the status code and return
 		r = requests.get(URL)
 		if(r.status_code != 200):
 			json["inner-link"] = URL
@@ -35,11 +37,15 @@ def crawl(URL, json):
 			json["plain-text"] = None
 			json["recrawl-date"] = None
 			return	
+			
+		#Grab the text, disallowed links, and imbedded links from the webpage
 		disallowList = crawlRobots(URL)	
 		crawledLinks = []
 		soup = BeautifulSoup(r.content, 'html.parser')	
 		links = soup.find_all('a')
 		text = soup.getText()
+		
+		#Only place non-disallowed links in the list of imbedded links
 		for link in links:
 			linkUrl = link['href']
 			linkAllowed = 1
@@ -48,22 +54,24 @@ def crawl(URL, json):
 					linkAllowed = 0
 			if(linkAllowed == 1):
 				crawledLinks.append(linkUrl)
-		for crawledLink in crawledLinks:
-			print(crawledLink)
-		print(RPIRelevanceCheck(URL, text ,crawledLinks))
-		print(findRecrawlDate(URL))
+		
+		#If the page is RPI relevant, set insert the scraped data into the json
 		if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
 			json["inner-link"] = URL
 			json["outbond-links"] = crawledLinks
 			json["status-code"] = r.status_code
 			json["plain-text"] = text
 			json["recrawl-date"] = findRecrawlDate(URL)
+			
+		#If the page isn't RPI relevant, set the status code to a custom error and don't use the scraped data
 		else:
 			json["inner-link"] = URL
 			json["outbond-links"] = []
 			json["status-code"] = 600
 			json["plain-text"] = None
-			json["recrawl-date"] = None	
+			json["recrawl-date"] = None
+			
+	#If there was a error connecting to the webpage, set the statauts code another custom error	
 	except requests.exceptions.ConnectionError:
 		json["inner-link"] = URL
 		json["outbond-links"] = []
@@ -79,9 +87,12 @@ def crawl(URL, json):
 #If robots.txt does not exist, or if it contains no disallowed links, return an empty list. No links will be disallowed.
 #Disallowed links will not be included in the list of inner-links sent to Document Data Storage
 def crawlRobots(URL):
+	
 	splitURL = URL.split("/")
 	disallowList = []
 	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/robots.txt"
+	
+	#Scrape all the dissallowed links from robots.txt
 	f = requests.get(robotsLink)
 	for line in f.iter_lines():
 		decoded = line.decode()
@@ -130,13 +141,14 @@ def findRecrawlDate(URL):
 #Modifies: Nothing
 #Loop through the list RPIRelevantWords. If any of these words appaer in the plaintext, source link or scraped links
 #The page is RPI relevant. If these words don't appear, it's not. non-relevant webpages should not be send to Document Data Storage to be stored.
-#If 
 def RPIRelevanceCheck(URL, plaintext, links):
 	for relevantWord in RPIRelevantWords:
 		if(relevantWord in URL):
 			return 1
+			
 		if(relevantWord in plaintext):
 			return 1
+			
 		for link in links:
 			if(relevantWord in link):
 				return 1
