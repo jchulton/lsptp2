@@ -92,7 +92,6 @@ def crawl_robots(url):
     disallow_list = []
     try:
         split_url = url.split("/")
-        disallow_list = []
         robots_link = split_url[0] + "/" + split_url[1] + "/" + split_url[2] + "/robots.txt"
 
         # Scrape all the disallowed links from robots.txt
@@ -103,7 +102,7 @@ def crawl_robots(url):
                 disallow_line = decoded.split("Disallow:")[1].strip()
                 disallow_list.append(disallow_line)
     except:
-        print("Crawl_robots failed unexpectedly")
+        print("crawl_robots failed unexpectedly")
     return disallow_list
 
 
