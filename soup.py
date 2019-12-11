@@ -7,7 +7,7 @@ import datetime
 from datetime import timedelta
 #A list containing all words/phrases that we consider relevant to RPI. A webpage with text or links that contains
 #One of these words will be considered relevant to RPI. Otherwise, it will be considered not relevant
-RPIRelevantWords = ["RPI", "Renssalaer", "SIS"]
+RPIRelevantWords = ["RPI", "Rensselaer", "SIS"]
 
 
 #Input: a string representing the URL 
@@ -154,14 +154,14 @@ def RPIRelevanceCheck(URL, plaintext, links):
 				return 1
 	return 0
 #This main is used for local testing purposes and should be removed/commented out for final implementation
-if __name__ == '__main__':
+#if __name__ == '__main__':
 	#p = Process(target=child, args(URL))
 	#p.start()
 	#p.join()
-	json = dict()
-	crawl("https://www.cs.rpi", json)
-	print(json["inner-link"])
-	print(json["outbond-links"])
-	print(json["status-code"])
-	print(json["plain-text"])
-	print(json["recrawl-date"])
+#	json = dict()
+#	crawl("https://www.cs.rpi", json)
+#	print(json["inner-link"])
+#	print(json["outbond-links"])
+#	print(json["status-code"])
+#	print(json["plain-text"])
+#	print(json["recrawl-date"])
