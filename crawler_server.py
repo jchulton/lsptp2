@@ -65,9 +65,11 @@ limit = 10
 
 ### Methods
 """
-description: infinite loop which gives new links to our crawling algorithm and replies to LA and DDS
+description: infinite loop which gives new links to our crawling 
+    algorithm and replies to LA and DDS
 input: none
-output: handles processing new links put into q_links then sends the data to LA and DDS
+output: handles processing new links put into q_links then sends the 
+    data to LA and DDS
 """
 def start_main():
     global app
@@ -136,10 +138,6 @@ def handle_child(link, json_object):
 
     completed_processes.append(Process.current_process())
 
-
-"""
-Description: starts main loop
-"""
 if __name__ == "__main__":
     print("Server starting")
     main = Process(target=start_main)

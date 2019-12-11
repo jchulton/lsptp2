@@ -26,37 +26,58 @@ RPIRelevantWords = ["RPI", "Renssalaer", "SIS"]
 #If the code fails midway through, the json will not be properly updated and will contain all Nones
 #The parent process will know the crawl failed
 def crawl(URL, json):
-	r = requests.get(URL)
-	disallowList = crawlRobots(URL)
+	try:
+		
+		#If the webpage couldn't be reached, don't try and parse it, just set the status code and return
+		r = requests.get(URL)
+		if(r.status_code != 200):
+			json["inner-link"] = URL
+			json["outbond-links"] = []
+			json["status-code"] = r.status_code
+			json["plain-text"] = None
+			json["recrawl-date"] = None
+			return	
 			
-	crawledLinks = []
-	soup = BeautifulSoup(r.content, 'html.parser')	
-	links = soup.find_all('a')
-	text = soup.getText()
-	for link in links:
-		linkUrl = link['href']
-		linkAllowed = 1
-		for disallowedLink in disallowList:
-			if(disallowedLink in linkUrl):
-				linkAllowed = 0
-		if(linkAllowed == 1):
-			crawledLinks.append(linkUrl)
-	for crawledLink in crawledLinks:
-		print(crawledLink)
-	print(RPIRelevanceCheck(URL, text ,crawledLinks))
-	print(findRecrawlDate(URL))
-	if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
-		json["inner-link"] = URL
-		json["outbond-links"] = crawledLinks
-		json["status-code"] = r.status_code
-		json["plain-text"] = text
-		json["recrawl-date"] = findRecrawlDate(URL)
-	else:
+		#Grab the text, disallowed links, and imbedded links from the webpage
+		disallowList = crawlRobots(URL)	
+		crawledLinks = []
+		soup = BeautifulSoup(r.content, 'html.parser')	
+		links = soup.find_all('a')
+		text = soup.getText()
+		
+		#Only place non-disallowed links in the list of imbedded links
+		for link in links:
+			linkUrl = link['href']
+			linkAllowed = 1
+			for disallowedLink in disallowList:
+				if(disallowedLink in linkUrl):
+					linkAllowed = 0
+			if(linkAllowed == 1):
+				crawledLinks.append(linkUrl)
+		
+		#If the page is RPI relevant, set insert the scraped data into the json
+		if(RPIRelevanceCheck(URL, text ,crawledLinks) == 1):
+			json["inner-link"] = URL
+			json["outbond-links"] = crawledLinks
+			json["status-code"] = r.status_code
+			json["plain-text"] = text
+			json["recrawl-date"] = findRecrawlDate(URL)
+			
+		#If the page isn't RPI relevant, set the status code to a custom error and don't use the scraped data
+		else:
+			json["inner-link"] = URL
+			json["outbond-links"] = []
+			json["status-code"] = 600
+			json["plain-text"] = None
+			json["recrawl-date"] = None
+			
+	#If there was a error connecting to the webpage, set the statauts code another custom error	
+	except requests.exceptions.ConnectionError:
 		json["inner-link"] = URL
 		json["outbond-links"] = []
-		json["status-code"] = 600
+		json["status-code"] = 602
 		json["plain-text"] = None
-		json["recrawl-date"] = None	
+		json["recrawl-date"] = None		
 
 #Input: a string representing the source URL
 #Output: a list of all links that are disallowed by robots.txt
@@ -66,9 +87,12 @@ def crawl(URL, json):
 #If robots.txt does not exist, or if it contains no disallowed links, return an empty list. No links will be disallowed.
 #Disallowed links will not be included in the list of inner-links sent to Document Data Storage
 def crawlRobots(URL):
+	
 	splitURL = URL.split("/")
 	disallowList = []
 	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/robots.txt"
+	
+	#Scrape all the dissallowed links from robots.txt
 	f = requests.get(robotsLink)
 	for line in f.iter_lines():
 		decoded = line.decode()
@@ -86,28 +110,28 @@ def crawlRobots(URL):
 #If the last modified date cannot be found, use the current date. If the change frequency cannot be found, use 1 month.
 #If the sitemap doesn't exist, use the defaults above (so return one month later than the current date).
 def findRecrawlDate(URL):
-	splitURL = URL.split("/")
-	disallowList = []
-	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
-	f = requests.get(robotsLink)
-	soup = BeautifulSoup(f.content, 'lxml')
-	surfaceTag = soup.find("loc", string = URL)
-	if surfaceTag is None:
-		return datetime.datetime.now() + timedelta(days=30)
-	changeFreqTag = surfaceTag.find(changefreq)
-	lastModTag = surfaceTag.find(lastmod)
-	if changeFreqTag is not None:
-		changeFreqTagVal = changeFreqTag.getText()
-		lastModTagVal = datetime.datetime.strptime(lastModTag.getText(), '%Y-%m-%d')
-		if changeFreqTagVal == "weekly":
-			return lastModTagVal + timedelta(days=7)
-		if changeFreqTagVal == "daily":
-			return lastModTagVal + timedelta(days=1)
-		if changeFreqTagVal == "monthly":
-			return lastModTagVal + timedelta(days=30)
-		if changeFreqTagVal == "yearly":
-			return lastModTagVal + timedelta(days=365)
-		return changeFreqTagVal
+#	splitURL = URL.split("/")
+#	disallowList = []
+#	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
+#	f = requests.get(robotsLink)
+#	soup = BeautifulSoup(f.content, 'lxml')
+#	surfaceTag = soup.find("loc", string = URL)
+#	if surfaceTag is None:
+#		return datetime.datetime.now() + timedelta(days=30)
+#	changeFreqTag = surfaceTag.find(changefreq)
+#	lastModTag = surfaceTag.find(lastmod)
+#	if changeFreqTag is not None:
+#		changeFreqTagVal = changeFreqTag.getText()
+#		lastModTagVal = datetime.datetime.strptime(lastModTag.getText(), '%Y-%m-%d')
+#		if changeFreqTagVal == "weekly":
+#			return lastModTagVal + timedelta(days=7)
+#		if changeFreqTagVal == "daily":
+#			return lastModTagVal + timedelta(days=1)
+#		if changeFreqTagVal == "monthly":
+#			return lastModTagVal + timedelta(days=30)
+#		if changeFreqTagVal == "yearly":
+#			return lastModTagVal + timedelta(days=365)
+#		return changeFreqTagVal
 	return datetime.datetime.now() + timedelta(days=30)
 
 #Input: a string representing the source URL
@@ -117,13 +141,14 @@ def findRecrawlDate(URL):
 #Modifies: Nothing
 #Loop through the list RPIRelevantWords. If any of these words appaer in the plaintext, source link or scraped links
 #The page is RPI relevant. If these words don't appear, it's not. non-relevant webpages should not be send to Document Data Storage to be stored.
-#If 
 def RPIRelevanceCheck(URL, plaintext, links):
 	for relevantWord in RPIRelevantWords:
 		if(relevantWord in URL):
 			return 1
+			
 		if(relevantWord in plaintext):
 			return 1
+			
 		for link in links:
 			if(relevantWord in link):
 				return 1
@@ -134,9 +159,9 @@ if __name__ == '__main__':
 	#p.start()
 	#p.join()
 	json = dict()
-	crawl("https://www.cs.rpi.edu/~goldsd/index.php", json)
+	crawl("https://www.cs.rpi", json)
 	print(json["inner-link"])
 	print(json["outbond-links"])
-	print(json["status_code"])
+	print(json["status-code"])
 	print(json["plain-text"])
-	print(json["date-to-update"])
+	print(json["recrawl-date"])
