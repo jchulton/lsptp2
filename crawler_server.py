@@ -1,5 +1,6 @@
 from flask import Flask, request, current_app
 from multiprocessing import Process
+import sys
 import json
 import socket
 import queue
@@ -44,8 +45,8 @@ def acknowledgement():
 need_ack = False
 
 # static IP addresses for the Link Analysis and Document Data Store servers
-LA_url = "http://lspt-link2.cs.rpi.edu"
-DDS_url = ""
+LA_url = sys.argv[2]
+DDS_url = sys.argv[3]
 
 ### Methods
 """
@@ -84,4 +85,4 @@ def send_link_info(json_object):
 # Starts the server
 if __name__ == "__main__":
     print("Server starting")
-    app.run(host='localhost', port=2502)
+    app.run(host='localhost', port=int(sys.argv[1]))
