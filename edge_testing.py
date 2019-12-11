@@ -25,7 +25,7 @@ class TestEdges(unittest.TestCase):
 
     def testCrawlBadResponse(self):
         # BAD RESPONSE, 404 error
-        test_url = "https://bleepbloop.com"
+        test_url = "http://paper.com/users"
         test_json = dict()
 
         outer_links = []
@@ -39,17 +39,18 @@ class TestEdges(unittest.TestCase):
         return
 
     def testCrawlGoodRelevantResponse(self):
-        test_url = "https://sis.rpi.edu"
+        test_url = "https://science.rpi.edu/"
         test_json = dict()
 
         outer_links = []
         code = 200
-        text = None  # TODO
+        text = None
         date = soup.find_recrawl_date()
         proper_response = make_response(test_url, outer_links, code, text, date)
 
         soup.crawl(test_url, test_json)
-        self.assertDictEqual(test_json, proper_response)
+        self.assertNotEqual(sorted(test_json['outbound-links']), sorted(proper_response['outbound-links']))
+        self.assertIsNotNone(test_json['plain-text'])
         return
 
     def testCrawlGoodIrrelevantResponse(self):
@@ -84,11 +85,17 @@ class TestEdges(unittest.TestCase):
 
     def testCrawlRobots(self):
 
-        url = "file:///home/yev/Desktop/LSP/test_page.html"
+        url = "./test_page.html"
+        disallow_list = soup.crawl_robots(url)
+        self.assertEqual(disallow_list, [])
 
         url = "https://science.rpi.edu"
+        disallow_list = soup.crawl_robots(url)
+        self.assertNotEqual(disallow_list, [])
 
         url = "www.google.com"
+        disallow_list = soup.crawl_robots(url)
+        self.assertEqual(disallow_list, [])
 
         return
 
