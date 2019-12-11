@@ -169,7 +169,7 @@ def rpi_relevance_check(url, plaintext, links):
     #json2 = dict()
     #crawl("https://www.cs.rpi", json2)
     #print(json2["inner-link"])
-    #print(json2["outbond-links"])
+    #print(json2["outbound-links"])
     #print(json2["status-code"])
     #print(json2["plain-text"])
     #print(json2["recrawl-date"])
