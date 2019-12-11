@@ -89,7 +89,9 @@ def populate_json(json, innerLink, outboundLinks, statusCode, plainText, recrawl
 # No links will be disallowed.
 # Disallowed links will not be included in the list of inner-links sent to Document Data Storage
 def crawl_robots(url):
+	
     disallow_list = []
+    
     try:
         split_url = url.split("/")
         robots_link = split_url[0] + "/" + split_url[1] + "/" + split_url[2] + "/robots.txt"
@@ -101,8 +103,10 @@ def crawl_robots(url):
             if "Disallow:" in decoded:
                 disallow_line = decoded.split("Disallow:")[1].strip()
                 disallow_list.append(disallow_line)
+    
     except:
         print("crawl_robots failed unexpectedly")
+    
     return disallow_list
 
 
