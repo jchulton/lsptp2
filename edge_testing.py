@@ -1,5 +1,4 @@
 import unittest
-from crawler_server import crawl_link
 import soup
 import datetime
 
