@@ -30,11 +30,7 @@ def crawl(url, json):
         # If the webpage couldn't be reached, don't try and parse it, just set the status code and return
         r = requests.get(url)
         if r.status_code != 200:
-            json["inner-link"] = url
-            json["outbound-links"] = []
-            json["status-code"] = r.status_code
-            json["plain-text"] = None
-            json["recrawl-date"] = None
+            populate_json(json, url, [], r.status_code, None, None)
             return
 
         # Grab the text, disallowed links, and embedded links from the webpage
@@ -56,28 +52,31 @@ def crawl(url, json):
 
         # If the page is RPI relevant, set insert the scraped data into the json
         if rpi_relevance_check(url, text, crawled_links) == 1:
-            json["inner-link"] = url
-            json["outbound-links"] = crawled_links
-            json["status-code"] = r.status_code
-            json["plain-text"] = text
-            json["recrawl-date"] = find_recrawl_date()
+            populate_json(json, url, crawled_links, status_code, text, find_recrawl_date())
 
         # If the page isn't RPI relevant, set the status code to a custom error and don't use the scraped data
         else:
-            json["inner-link"] = url
-            json["outbound-links"] = []
-            json["status-code"] = 600
-            json["plain-text"] = None
-            json["recrawl-date"] = None
+            populate_json(json, url, [], 600, None, None)
 
     # If there was a error connecting to the webpage, set the status code another custom error
     except requests.exceptions.ConnectionError:
-        json["inner-link"] = url
-        json["outbound-links"] = []
-        json["status-code"] = 602
-        json["plain-text"] = None
-        json["recrawl-date"] = None
+        populate_json(json, url, [], 602, None, None)
 
+# Input: a dict representing an empty json file
+#   inner-link: The given URL
+#   status-code contains the status code that results from querying the given URL
+#   outbound-links: contains all links that are on webpage queried from the given URL
+#   plain-text: contains all the plaintext that is on the webpage queried from the given URL
+#   recrawl-date: The date on which the webpage should be recrawled
+# Output: None
+# Modifies: json, adds the given information to the given json object
+# Given an empty json file, add the other input parameters to the given json. Basically processes the scraped data into the json to be sent to Link Analysis
+def populate_json(json, innerLink, outboundLinks, statusCode, plainText, recrawlDate):
+    json["inner-link"] = innerLink
+    json["outbound-links"] = outboundLinks
+    json["status-code"] = statusCode
+    json["plain-text"] = plainText
+    json["recrawl-date"] = recrawlDate
 
 # Input: a string representing the source URL
 # Output: a list of all links that are disallowed by robots.txt
@@ -169,7 +168,7 @@ def rpi_relevance_check(url, plaintext, links):
     #json2 = dict()
     #crawl("https://www.cs.rpi", json2)
     #print(json2["inner-link"])
-    #print(json2["outbound-links"])
+    #print(json2["outbond-links"])
     #print(json2["status-code"])
     #print(json2["plain-text"])
     #print(json2["recrawl-date"])
