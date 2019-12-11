@@ -42,17 +42,18 @@ def crawl(url, json):
 
         # Only place non-disallowed links in the list of embedded links
         for link in links:
-            link_url = link['href']
-            link_allowed = 1
-            for disallowedLink in disallow_list:
-                if disallowedLink in link_url:
-                    link_allowed = 0
-            if link_allowed == 1:
-                crawled_links.append(link_url)
+            if link.has_attr('href'):
+                link_url = link['href']
+                link_allowed = 1
+                for disallowedLink in disallow_list:
+                    if disallowedLink in link_url:
+                        link_allowed = 0
+                if link_allowed == 1:
+                    crawled_links.append(link_url)
 
         # If the page is RPI relevant, set insert the scraped data into the json
         if rpi_relevance_check(url, text, crawled_links) == 1:
-            populate_json(json, url, crawled_links, status_code, text, find_recrawl_date())
+            populate_json(json, url, crawled_links, r.status_code, text, find_recrawl_date())
 
         # If the page isn't RPI relevant, set the status code to a custom error and don't use the scraped data
         else:
@@ -161,14 +162,14 @@ def rpi_relevance_check(url, plaintext, links):
 
 
 # This main is used for local testing purposes and should be removed/commented out for final implementation
-#if __name__ == '__main__':
+if __name__ == '__main__':
     # p = Process(target=child, args(URL))
     # p.start()
     # p.join()
-    #json2 = dict()
-    #crawl("https://www.cs.rpi", json2)
-    #print(json2["inner-link"])
-    #print(json2["outbond-links"])
-    #print(json2["status-code"])
-    #print(json2["plain-text"])
-    #print(json2["recrawl-date"])
+    json2 = dict()
+    crawl("https://science.rpi.edu/computer-science", json2)
+    print(json2["inner-link"])
+    print(json2["outbound-links"])
+    print(json2["status-code"])
+    print(json2["plain-text"])
+    print(json2["recrawl-date"])
