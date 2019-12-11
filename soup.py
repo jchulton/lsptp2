@@ -120,28 +120,6 @@ def crawl_robots(url):
 # If the sitemap doesn't exist, use the defaults above (so return one month later than the current date).
 # NOTE: IF CODE IS UNCOMMENTED, find_recrawl_date MUST REQUEST A URL. i.e. find_recrawl_date(url)
 def find_recrawl_date():
-    #   splitURL = URL.split("/")
-    #   disallowList = []
-    # 	robotsLink = splitURL[0]+"/"+splitURL[1]+"/"+splitURL[2] + "/sitemap.xml"
-    # 	f = requests.get(robotsLink)
-    # 	soup = BeautifulSoup(f.content, 'lxml')
-    # 	surfaceTag = soup.find("loc", string = URL)
-    # 	if surfaceTag is None:
-    # 		return datetime.datetime.now() + timedelta(days=30)
-    # 	changeFreqTag = surfaceTag.find(changefreq)
-    # 	lastModTag = surfaceTag.find(lastmod)
-    # 	if changeFreqTag is not None:
-    # 		changeFreqTagVal = changeFreqTag.getText()
-    # 		lastModTagVal = datetime.datetime.strptime(lastModTag.getText(), '%Y-%m-%d')
-    # 		if changeFreqTagVal == "weekly":
-    # 			return lastModTagVal + timedelta(days=7)
-    # 		if changeFreqTagVal == "daily":
-    # 			return lastModTagVal + timedelta(days=1)
-    # 		if changeFreqTagVal == "monthly":
-    # 			return lastModTagVal + timedelta(days=30)
-    # 		if changeFreqTagVal == "yearly":
-    # 			return lastModTagVal + timedelta(days=365)
-    # 		return changeFreqTagVal
     return datetime.datetime.now() + timedelta(days=30)
 
 
@@ -169,14 +147,14 @@ def rpi_relevance_check(url, plaintext, links):
 
 
 # This main is used for local testing purposes and should be removed/commented out for final implementation
-if __name__ == '__main__':
+#if __name__ == '__main__':
     # p = Process(target=child, args(URL))
     # p.start()
     # p.join()
-    json2 = dict()
-    crawl("https://science.rpi.edu/computer-science", json2)
-    print(json2["inner-link"])
-    print(json2["outbound-links"])
-    print(json2["status-code"])
-    print(json2["plain-text"])
-    print(json2["recrawl-date"])
+    #json2 = dict()
+    #crawl("https://science.rpi.edu/computer-science", json2)
+    #print(json2["inner-link"])
+    #print(json2["outbound-links"])
+    #print(json2["status-code"])
+    #print(json2["plain-text"])
+    #print(json2["recrawl-date"])
