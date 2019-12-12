@@ -9,12 +9,13 @@ import requests
 import importlib
 
 #creates a mock link analysis server to communicate with crawler server
+'''
 mock_LA = Flask(__name__)
 def send_links(link):
     headers = {'X-API-TOKEN': 'crawl'}
     payload = {'link': link}
     r = requests.post('http://localhost:2500/', data=payload, headers=headers)
-
+'''
 
 # starts the server
 if __name__ == "__main__":
