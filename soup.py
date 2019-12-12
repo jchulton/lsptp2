@@ -3,10 +3,11 @@ import os
 from bs4 import BeautifulSoup
 import datetime
 from datetime import timedelta
-
+import re
 # A list containing all words/phrases that we consider relevant to RPI. A webpage with text or links that contains
-# One of these words will be considered relevant to RPI. Otherwise, it will be considered not relevant
-RPIRelevantWords = ["RPI", "Rensselaer", "SIS"]
+# One of these words will be considered relevant to RPI. Otherwise, it will be considered not relevant.
+# All words in the list should be lowercase, the matching is case insensitive
+RPIRelevantRegexes = [r'[^a-zA-Z]rpi[^a-zA-Z]', r'[^a-zA-Z]rensselaer[^a-zA-Z]', r'[^a-zA-Z]sis[^a-zA-Z]']
 
 
 # Input: a string representing the URL
@@ -133,15 +134,15 @@ def find_recrawl_date():
 # The page is RPI relevant. If these words don't appear, it's not.
 # Non-relevant webpages should not be send to Document Data Storage to be stored.
 def rpi_relevance_check(url, plaintext, links):
-    for relevantWord in RPIRelevantWords:
-        if relevantWord in url:
+    for relevantRegex in RPIRelevantRegexes:
+        if re.search(relevantRegex, url.lower()):
             return 1
 
-        if relevantWord in plaintext:
+        if re.search(relevantRegex, plaintext.lower()):
             return 1
 
         for link in links:
-            if relevantWord in link:
+            if re.search(relevantRegex, link.lower()):
                 return 1
     return 0
 

@@ -45,8 +45,8 @@ def acknowledgement():
 need_ack = False
 
 # static IP addresses for the Link Analysis and Document Data Store servers
-LA_url = sys.argv[2]
-DDS_url = sys.argv[3]
+#LA_url = sys.argv[2]
+#DDS_url = sys.argv[3]
 
 ### Methods
 """

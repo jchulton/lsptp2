@@ -110,7 +110,7 @@ class TestEdges(unittest.TestCase):
 
         text = "O sis man, what hath you wrought?"
         test2 = soup.rpi_relevance_check(url, text, links)
-        self.assertEqual(test2, 0, "Case-sensitive check on text failed.")
+        self.assertEqual(test2, 1, "Case-insensitive check on text failed.")
 
         url = "https://science.rpi.edu"
         test3 = soup.rpi_relevance_check(url, text, links)
