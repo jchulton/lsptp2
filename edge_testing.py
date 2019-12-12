@@ -1,5 +1,4 @@
 import unittest
-from crawler_server import crawl_link
 import soup
 import datetime
 
@@ -85,13 +84,18 @@ class TestEdges(unittest.TestCase):
 
     def testCrawlRobots(self):
 
-        url = "./test_page.html"
+        url = "http://blog.davidstea.com/robots.txt"
         disallow_list = soup.crawl_robots(url)
         self.assertEqual(disallow_list, [])
 
         url = "https://science.rpi.edu"
         disallow_list = soup.crawl_robots(url)
         self.assertNotEqual(disallow_list, [])
+        server_response = dict()
+        soup.crawl(url, server_response)
+        for unallowed_link in disallow_list:
+            for link in server_response['outbound-links']:
+                self.assertNotIn(unallowed_link, link)
 
         url = "www.google.com"
         disallow_list = soup.crawl_robots(url)
