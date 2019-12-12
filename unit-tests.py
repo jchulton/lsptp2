@@ -4,6 +4,7 @@ from crawler_server import crawl_link
 import soup.py
 
 class TestCrawlLink(unittest.TestCase):
+    
     def no_violations_no_sitemap(self):
         proper_response = ""  # TODO: Create proper JSON response
         self.assertEqual(crawl_link(), proper_response)
