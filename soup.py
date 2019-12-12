@@ -4,9 +4,9 @@ from bs4 import BeautifulSoup
 import datetime
 from datetime import timedelta
 import re
-# A list containing all words/phrases that we consider relevant to RPI. A webpage with text or links that contains
-# One of these words will be considered relevant to RPI. Otherwise, it will be considered not relevant.
-# All words in the list should be lowercase, the matching is case insensitive
+# A list containing all regex that we consider relevant to RPI. A webpage with text or links that contains
+# One of these regex will be considered relevant to RPI. Otherwise, it will be considered not relevant.
+# All letters in these regexes in the list should be lowercase, the matching is case insensitive
 RPIRelevantRegexes = [r'[^a-zA-Z]rpi[^a-zA-Z]', r'[^a-zA-Z]rensselaer[^a-zA-Z]', r'[^a-zA-Z]sis[^a-zA-Z]']
 
 
