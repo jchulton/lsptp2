@@ -11,30 +11,34 @@ from soup import crawl
 app = Flask(__name__)
 
 ### API Calls
-"""
-Description: Takes a /crawl request from L.A. and queues a new link
-Input: A crawl request with a single link (string) as a parameter
-Output: Sends the link to a queue of urls which will be processed.
-        Also sends an acknowledgment to LA
-Effects: queues a new link to q_links
-"""
+
+#Description: Takes a /crawl request from L.A. and queues a new link
+#Input: A crawl request with a single link (string) as a parameter
+#Output: Sends the link to a queue of urls which will be processed.
+#        Also sends an acknowledgment to LA
+#Effects: queues a new link to q_links
 @app.route('/crawl', methods=['POST'])
 def crawl_link():
+
+    # get the link that was sent
     link = request.args['link']
     json_object = dict()
+
+    # use the crawling algorithm to fill the json object
     scrape_link(link, json_object)
+
+    # send the json data to LA and DDS
     send_link_info(json_object)
-    print(link, json_object)
-    # send output to link analysis
+
+    # send acknowledgment back to LA
     return 'ack'
 
 
-"""
-Description: Recognize if an acknowledgement was recieved
-Input: An /ack request
-Effects: tells the server another componenet has recieved our data
-Modifies: nothing
-"""
+
+#Description: Recognize if an acknowledgement was recieved
+#Input: An /ack request
+#Effects: tells the server another componenet has recieved our data
+#Modifies: nothing
 @app.route('/ack')
 def acknowledgement():
     need_ack = False
@@ -45,26 +49,24 @@ def acknowledgement():
 need_ack = False
 
 # static IP addresses for the Link Analysis and Document Data Store servers
-#LA_url = sys.argv[2]
-#DDS_url = sys.argv[3]
+LA_url = sys.argv[2]
+DDS_url = sys.argv[3]
 
 ### Methods
-"""
-Overview: Using the crawling algorithm, process the link and scrape the data from it
-Input: string - link, dictionary - json object
-Output: the reference object 'json_object' will store all data gathered during the crawling into said object
-Modifies: nothing
-"""
+
+#Overview: Using the crawling algorithm, process the link and scrape the data from it
+#Input: string - link, dictionary - json object
+#Output: the reference object 'json_object' will store all data gathered during the crawling into said object
+#Modifies: nothing
 def scrape_link(link, json_object):
     # call the crawl algorithm on the given link
     json_object = crawl(link, json_object)
 
-"""
-Overview: Send the gathered JSON object to DDS, and portions of it to LA
-Input: dictionary - json_object holding all pertinent information
-Output: None
-Effects: Sends data to both DDS and LA for them to store and manipulate, respectively 
-"""
+
+#Overview: Send the gathered JSON object to DDS, and portions of it to LA
+#Input: dictionary - json_object holding all pertinent information
+#Output: None
+#Effects: Sends data to both DDS and LA for them to store and manipulate, respectively 
 def send_link_info(json_object):
 
     # send output to link analysis
@@ -85,4 +87,10 @@ def send_link_info(json_object):
 # Starts the server
 if __name__ == "__main__":
     print("Server starting")
+
+    # start server
     app.run(host='localhost', port=int(sys.argv[1]))
+
+# How to run tests on server:
+# start server in terminal with this format: python3 crawler_server.py 2507 http://lspt-link2.cs.rpi.edu http://lspt-dds2.cs.rpi.edu
+# use curl command to send a link to the server: curl -X POST 'http://127.0.0.1:2507/crawl?link=https://www.cs.rpi.edu/~goldsd/index.php'
